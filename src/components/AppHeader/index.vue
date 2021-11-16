@@ -7,7 +7,7 @@
     </a>
     <el-dropdown @command="handleCommand">
       <span class="el-dropdown-link">
-        下拉菜单<i class="el-icon-arrow-down el-icon--right"></i>
+        {{ user.name }}<i class="el-icon-arrow-down el-icon--right"></i>
       </span>
       <el-dropdown-menu slot="dropdown">
         <el-dropdown-item icon="el-icon-edit" command="a"
@@ -18,52 +18,180 @@
         >
       </el-dropdown-menu>
     </el-dropdown>
+    <!-- 修改密码弹框 -->
+    <el-dialog title="修改密码" :visible.sync="dialogFormVisible" width="400px">
+      <el-form
+        :model="ruleForm"
+        status-icon
+        :rules="rules"
+        ref="ruleForm"
+        label-width="100px"
+        style="width: 300px"
+      >
+        <el-form-item label="原密码" prop="oldPass">
+          <el-input
+            type="password"
+            v-model="ruleForm.oldPass"
+            autocomplete="off"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="新密码" prop="pass">
+          <el-input
+            type="password"
+            v-model="ruleForm.pass"
+            autocomplete="off"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="确认密码" prop="checkPass">
+          <el-input
+            type="password"
+            v-model="ruleForm.checkPass"
+            autocomplete="off"
+          ></el-input>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="submitForm('ruleForm')"
+            >提交</el-button
+          >
+          <el-button @click="$refs['ruleForm'].resetFields()">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import { logOut } from "@/api/login";
+import passwordAPI from "@/api/password";
 export default {
   data() {
-    return {};
+    // 在return上面进行声明自定义校验
+    const validateOldPass = (rule, value, callback) => {
+      passwordAPI.checkPwd(this.user.id, value).then((response) => {
+        const resp = response.data;
+        if (resp.flag) {
+          // 验证通过
+          callback();
+        } else {
+          callback(new Error(resp.message));
+        }
+      });
+    };
+    // 校验确认密码是否一致
+    const validatePass = (rule, value, callback) => {
+      passwordAPI.checkPwd(this.user.id, value).then((response) => {
+        // value代表 checkPass
+        if (value !== this.ruleForm.pass) {
+          callback(new Error("两次输入的密码不一致"));
+        } else {
+          // 相等则通过
+          callback();
+        }
+      });
+    };
+    return {
+      // user: JSON.parse(localStorage.getItem("mms-user")),
+      user: this.$store.state.user.user,
+      dialogFormVisible: false,
+      ruleForm: {
+        oldPass: "",
+        pass: "",
+        checkPass: "",
+      },
+      rules: {
+        oldPass: [
+          { required: true, message: "原密码不能为空", trigger: "blur" },
+          { validator: validateOldPass, trigger: "blur" },
+        ],
+        pass: [{ required: true, message: "新密码不能为空", trigger: "blur" }],
+        checkPass: [
+          { required: true, message: "确认密码不能为空", trigger: "blur" },
+          { validator: validatePass, trigger: "change" },
+        ],
+      },
+    };
   },
 
   components: {},
 
   methods: {
+    // 修改密码提交按钮
+    submitForm(formName) {
+      this.$refs[formName].validate((valid) => {
+        if (valid) {
+          passwordAPI
+            .updatePwd(this.user.id, this.ruleForm.checkPass)
+            .then((response) => {
+              const resp = response.data;
+              // 不管失败还是成功，都进行提醒
+              this.$message({
+                message: resp.message,
+                type: resp.flag ? "success" : "error",
+              });
+              if (resp.flag) {
+                // 更新成功，退出系统，回到登录页
+                this.loginOut();
+                // 关闭窗口
+                this.dialogFormVisible = false;
+              }
+            });
+        } else {
+          return false;
+        }
+      });
+    },
+    // 打开修改密码弹框
+    handlePwd() {
+      this.dialogFormVisible = true;
+      this.$nextTick(() => {
+        this.$refs["ruleForm"].resetFields();
+      });
+    },
     // 退出系统
     loginOut() {
+      this.$store.dispatch("LoginOut").then((response) => {
+        console.log(response);
+        if (response.flag) {
+          this.$router.push("/login");
+        } else {
+          this.$message({
+            message: resp.message,
+            type: "warning",
+            duration: 2000,
+          });
+        }
+      });
       // 获取本地token
-      const token = localStorage.getItem("msm-token");
-      logOut(token)
-        .then((response) => {
-          const resp = response.data;
-          if (resp.flag) {
-            // 提醒退出成功
-            this.$message({
-              message: resp.message,
-              type: "success",
-            });
-            // 清空本地token和user信息
-            localStorage.removeItem("mms-token");
-            localStorage.removeItem("mms-user");
-            this.$router.push('/login')
-          } else {
-            this.$message({
-              message: resp.message,
-              type: "warning",
-            });
-          }
-        })
-        .catch((error) => {
-          return false;
-        });
+      // const token = localStorage.getItem("mms-token");
+      // logOut(token)
+      //   .then((response) => {
+      //     const resp = response.data;
+      //     if (resp.flag) {
+      //       // 提醒退出成功
+      //       this.$message({
+      //         message: resp.message,
+      //         type: "success",
+      //       });
+      //       // 清空本地token和user信息
+      //       localStorage.removeItem("mms-token");
+      //       localStorage.removeItem("mms-user");
+      //       this.$router.push("/login");
+      //     } else {
+      //       this.$message({
+      //         message: resp.message,
+      //         type: "warning",
+      //       });
+      //     }
+      //   })
+      //   .catch((error) => {
+      //     return false;
+      //   });
     },
     // 判断点击
     handleCommand(command) {
       switch (command) {
         case "a":
-          alert("修改密码");
+          this.handlePwd();
           break;
         case "b":
           this.loginOut();

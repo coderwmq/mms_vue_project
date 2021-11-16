@@ -16,7 +16,7 @@ export function login(username, pass) {
 
 
 // 根据token获取用户信息
-export function getUser(token) {
+export function getUsers(token) {
   return request({
     url: `/user/info/${token}`,
     method: 'get'

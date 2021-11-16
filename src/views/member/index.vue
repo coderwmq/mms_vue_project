@@ -130,6 +130,9 @@
             ></el-option>
           </el-select>
         </el-form-item>
+        <el-form-item label="会员地址" prop="address">
+          <el-input type="textarea" v-model="pojo.address"></el-input>
+        </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogFormVisible = false">取 消</el-button>
@@ -147,11 +150,11 @@
 
 <script>
 import {
-  getMemberList,
   search,
   addMember,
   queryMemberById,
   updateMember,
+  delMemberById,
 } from "@/api/member";
 // 定义支付类型数组 ，为什么不能定义在里面？因为在过滤器中不能引用当前实例
 const payTypeOptions = [
@@ -179,6 +182,8 @@ export default {
         id: null,
         cardNum: "",
         name: "",
+        birthday: "",
+        payType: "",
         birthday: "",
         phone: "",
         money: "",
@@ -211,22 +216,23 @@ export default {
     updateData(formName) {
       this.$refs[formName].validate((valid) => {
         if (valid) {
-          updateMember(this.pojo.id).then((response) => {
+          updateMember(this.pojo).then((response) => {
             const resp = response.data;
-            console.log(this.pojo.id);
-            // 刷新数据
-            this.getAllMember();
-            // 关闭弹框
-            this.dialogFormVisible = false;
+            console.log("修改", this.pojo);
             if (resp.flag) {
+              // this.pojo.id置为null
+              // 解决添加变修改
+              this.pojo.id = null;
+              // 刷新数据
+              this.getAllMember();
+              // 关闭弹框
+              this.dialogFormVisible = false;
               this.$message({
                 message: resp.message,
                 type: "success",
               });
             }
           });
-        } else {
-          return false;
         }
       });
     },
@@ -238,16 +244,16 @@ export default {
           //校验通过
           addMember(this.pojo).then((response) => {
             const resp = response.data;
-            console.log(this.pojo.id);
+            console.log("添加", this.pojo.id);
             if (resp.flag) {
-              this.$message({
-                message: resp.message,
-                type: "success",
-              });
               // 刷新数据
               this.getAllMember();
               // 关闭弹框
               this.dialogFormVisible = false;
+              this.$message({
+                message: resp.message,
+                type: "success",
+              });
             }
           });
         } else {
@@ -284,12 +290,30 @@ export default {
         const respUser = response.data;
         if (respUser.flag) {
           this.pojo = respUser.data;
+          console.log(this.pojo);
         }
       });
     },
     // 点击删除按钮
     handleDelete(id) {
-      console.log("删除", id);
+      this.$confirm("确认删除这条数据吗？", "提示", {
+        confirmButtonText: "确认",
+        cancelButtonText: "取消",
+      })
+        .then(() => {
+          delMemberById(id).then((response) => {
+            const resp = response.data;
+            this.$message({
+              message: resp.message,
+              type: resp.flag ? "success" : "error",
+            });
+
+            if (resp.flag) {
+              this.getAllMember();
+            }
+          });
+        })
+        .catch(() => {});
     },
     // pageSize发生变化
     handleSizeChange(val) {

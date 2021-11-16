@@ -25,14 +25,16 @@
 </template>
 
 <script>
-import {login,getUser} from "@/api/login";
+import { login, getUsers } from "@/api/login";
 export default {
   data() {
     return {
       ruleForm: {},
       rules: {
-        username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-        pass: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+        username: [
+          { required: true, message: "请输入用户名", trigger: "blur" },
+        ],
+        pass: [{ required: true, message: "请输入密码", trigger: "blur" }],
       },
     };
   },
@@ -46,28 +48,16 @@ export default {
       this.$refs[formName].validate((valid) => {
         // 校验通过
         if (valid) {
-          login(this.ruleForm.username, this.ruleForm.pass)
-            .then((response) => {
-              // 请求到数据
-              const resp = response.data;
-              // 如果拿到token,继续请求
-              if (resp.flag) {
-                getUser(resp.data.token).then(response=>{
-                  const respUser=response.data
-                  // 如果获取到用户信息
-                  if (respUser.flag) {
-                    // 将信息存放到本地
-                    localStorage.setItem('mms-user',JSON.stringify(respUser.data))
-                    localStorage.setItem('mms-token',resp.data.token)
-                    // 前往首页
-                    this.$router.push('/')
-                  }
-                })
-              }
-            });
-        } else {
-          //校验不通过
-          return false;
+          this.$store.dispatch("Login", this.ruleForm).then((response) => {
+            if (response.flag) {
+              this.$router.push("/");
+            } else {
+              this.$message({
+                message: response.message,
+                type: "warning",
+              });
+            }
+          });
         }
       });
     },

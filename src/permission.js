@@ -1,9 +1,11 @@
 import router from './router'
-import { getUser } from '@/api/login'
+// import { getUsers, login } from '@/api/login'
+import store from './store'
 
 router.beforeEach((to, from, next) => {
   /* 获取token */
-  const token = localStorage.getItem('mms-token')
+  // const token = localStorage.getItem('mms-token')
+  const token = store.state.user.token
   // 如果token为null
   if (!token) {
     // 无token访问非登录页面
@@ -18,24 +20,24 @@ router.beforeEach((to, from, next) => {
       next()
     } else {
       // 获取本地用户信息
-      const userInfo = localStorage.getItem('msm-user')
+      // const userInfo = localStorage.getItem('mms-user')
+      const userInfo = store.state.user.user
+      console.log('userInfo',userInfo);
       // 有本地用户信息
       if (userInfo) {
         next()//允许访问任意页面
       } else {//没有用户信息
+        console.log('2.有令牌',userInfo);
         // 根据token获取用户信息
-        getUser(token).then(response => {
-          const respUser = response.data
-          // 如果获取到了用户信息
-          if (respUser.flag) {
-            // 用户信息存储本地
-            localStorage.setItem('msm-user', JSON.stringify(respUser.data))
-            next()//去哪里都可以
-          } else {//没有获取到用户信息
-            next({ path: '/login' })
+        store.dispatch('GetUserInfo').then(response => {
+          if (response.flag) {
+            console.log('3.有令牌，有用户信息',response);
+            next()
+          } else {
+            next({
+              path: '/login'
+            })
           }
-        }).catch(error => {
-          return false
         })
       }
     }

@@ -23,9 +23,8 @@ export function addMember(pojo) {
   return request({
     url: `/member`,
     method: 'post',
-    data:{
-      pojo
-    }
+    data:pojo
+    
   })
 }
 // 根据id查询会员
@@ -35,10 +34,19 @@ export function queryMemberById(id) {
     method: 'get',
   })
 }
-// 根据id查询会员
-export function updateMember(id) {
+// 更新会员
+export function updateMember(pojo) {
+  return request({
+    url: `/member/${pojo.id}`,
+    method: 'put',
+    data: pojo
+    
+  })
+}
+// 删除会员
+export function delMemberById(id) {
   return request({
     url: `/member/${id}`,
-    method: 'put',
+    method: 'delete',
   })
 }
