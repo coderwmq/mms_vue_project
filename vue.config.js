@@ -14,12 +14,12 @@ module.exports = {
         changeOrigin: true,//开启代理
         pathRewrite: {
           // 会将/dev-api替换为'',也就是移除/dev-api
-          ['^'+process.env.VUE_APP_BASE_API]: '',
+          ['^' + process.env.VUE_APP_BASE_API]: '',
         }
       }
     }
   },
-  lintOnSave: false,//关闭格式检查
+  lintOnSave: false,//关闭格式检查 6.12 20:20
   productionSourceMap: false,//打包时不会生成.map文件
 
 }
